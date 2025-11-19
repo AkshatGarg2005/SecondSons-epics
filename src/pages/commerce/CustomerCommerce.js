@@ -5,6 +5,9 @@ import {
   where,
   onSnapshot,
   addDoc,
+  getDocs,
+  updateDoc,
+  doc,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -15,9 +18,7 @@ const CustomerCommerce = () => {
   const [shops, setShops] = useState([]);
   const [products, setProducts] = useState([]);
   const [selectedShop, setSelectedShop] = useState(null);
-
-  // Cart: [{ productId, quantity }]
-  const [cartItems, setCartItems] = useState([]);
+  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -55,100 +56,55 @@ const CustomerCommerce = () => {
     ? products.filter((p) => p.shopId === selectedShop.id)
     : [];
 
-  const resetCartForNewShop = (shop) => {
+  const selectShop = (shop) => {
     setSelectedShop(shop);
-    setCartItems([]); // cart is per-shop
+    setMessage('');
     setError('');
   };
 
-  const addToCart = (product) => {
-    if (!selectedShop || product.shopId !== selectedShop.id) {
-      // Safety: only allow items from the currently selected shop
-      resetCartForNewShop(
-        shops.find((s) => s.id === product.shopId) || null
-      );
-    }
-
-    setCartItems((prev) => {
-      const existing = prev.find(
-        (item) => item.productId === product.id
-      );
-      if (existing) {
-        return prev.map((item) =>
-          item.productId === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-      return [...prev, { productId: product.id, quantity: 1 }];
-    });
-
+  const addToCart = async (product) => {
+    setMessage('');
     setError('');
-  };
-
-  const updateCartQuantity = (productId, newQty) => {
-    const value = parseInt(newQty, 10);
-    if (Number.isNaN(value) || value <= 0) {
-      // Remove if non-positive
-      setCartItems((prev) =>
-        prev.filter((item) => item.productId !== productId)
-      );
-      return;
-    }
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.productId === productId
-          ? { ...item, quantity: value }
-          : item
-      )
-    );
-  };
-
-  const removeFromCart = (productId) => {
-    setCartItems((prev) =>
-      prev.filter((item) => item.productId !== productId)
-    );
-  };
-
-  const placeOrderFromCart = async () => {
-    setError('');
-
-    if (!selectedShop) {
-      setError('Please select a shop first.');
-      return;
-    }
-
-    if (cartItems.length === 0) {
-      setError('Your cart is empty.');
-      return;
-    }
 
     if (!savedAddress) {
       setError(
-        'Please set your address in My Profile before placing an order.'
+        'Please set your address in My Profile before adding items to cart.'
       );
       return;
     }
 
     try {
-      // Create one commerceOrders document per cart item
-      for (const item of cartItems) {
-        await addDoc(collection(db, 'commerceOrders'), {
-          customerId: user.uid,
-          shopId: selectedShop.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          status: 'pending', // pending, accepted, rejected, ready_for_delivery, out_for_delivery, delivered
-          deliveryPartnerId: null,
-          address: savedAddress,
+      // We keep one cart item doc per (userId, productId)
+      const q = query(
+        collection(db, 'cartItems'),
+        where('userId', '==', user.uid),
+        where('productId', '==', product.id)
+      );
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        // New item with quantity 1
+        await addDoc(collection(db, 'cartItems'), {
+          userId: user.uid,
+          shopId: product.shopId,
+          productId: product.id,
+          quantity: 1,
           createdAt: serverTimestamp(),
+        });
+      } else {
+        // Increment existing quantity
+        const docRef = snap.docs[0].ref;
+        const existingData = snap.docs[0].data();
+        const currentQty = existingData.quantity || 1;
+        await updateDoc(docRef, {
+          quantity: currentQty + 1,
         });
       }
 
-      setCartItems([]);
+      setMessage('Added to cart. You can review and place order from the Cart page.');
     } catch (err) {
       console.error(err);
-      setError(err.message || 'Failed to place order');
+      setError(err.message || 'Failed to add to cart');
     }
   };
 
@@ -156,7 +112,8 @@ const CustomerCommerce = () => {
     <div>
       <h1>Quick Commerce (Customer)</h1>
       <p>
-        Your order history is available in the "My Orders" page.
+        Your order history is in the <strong>"My Orders"</strong> page.  
+        Adding items here will store them in your <strong>Cart</strong>.
       </p>
 
       <p>
@@ -165,6 +122,13 @@ const CustomerCommerce = () => {
           ? savedAddress
           : 'No address set. Go to "My Profile" and set your address.'}
       </p>
+
+      {message && (
+        <p style={{ color: 'green', marginTop: '8px' }}>{message}</p>
+      )}
+      {error && (
+        <p style={{ color: 'red', marginTop: '8px' }}>{error}</p>
+      )}
 
       {/* Shops list */}
       <h2>Shops</h2>
@@ -177,7 +141,7 @@ const CustomerCommerce = () => {
             {s.address && <div>Address: {s.address}</div>}
             {s.phone && <div>Phone: {s.phone}</div>}
             <button
-              onClick={() => resetCartForNewShop(s)}
+              onClick={() => selectShop(s)}
               style={{ marginTop: '4px' }}
             >
               View products
@@ -201,6 +165,7 @@ const CustomerCommerce = () => {
                 <button
                   onClick={() => addToCart(p)}
                   style={{ marginTop: '4px' }}
+                  disabled={!savedAddress}
                 >
                   Add to cart
                 </button>
@@ -212,71 +177,6 @@ const CustomerCommerce = () => {
           </ul>
         </div>
       )}
-
-      {/* Cart */}
-      <div style={{ marginTop: '24px' }}>
-        <h2>Your cart</h2>
-        {cartItems.length === 0 && <p>Cart is empty.</p>}
-        {cartItems.length > 0 && (
-          <ul>
-            {cartItems.map((item) => {
-              const product = products.find(
-                (p) => p.id === item.productId
-              );
-              return (
-                <li
-                  key={item.productId}
-                  style={{
-                    marginBottom: '6px',
-                    padding: '4px',
-                    border: '1px solid #ccc',
-                  }}
-                >
-                  <div>
-                    {product ? product.name : item.productId}
-                  </div>
-                  <label>
-                    Quantity:{' '}
-                    <input
-                      type="number"
-                      min="1"
-                      value={item.quantity}
-                      onChange={(e) =>
-                        updateCartQuantity(
-                          item.productId,
-                          e.target.value
-                        )
-                      }
-                      style={{ width: '60px' }}
-                    />
-                  </label>
-                  <button
-                    onClick={() =>
-                      removeFromCart(item.productId)
-                    }
-                    style={{ marginLeft: '8px' }}
-                  >
-                    Remove
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
-        <button
-          onClick={placeOrderFromCart}
-          disabled={
-            cartItems.length === 0 || !savedAddress || !selectedShop
-          }
-        >
-          Place order from cart
-        </button>
-
-        {error && (
-          <p style={{ color: 'red', marginTop: '8px' }}>{error}</p>
-        )}
-      </div>
     </div>
   );
 };

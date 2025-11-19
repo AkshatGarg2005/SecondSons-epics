@@ -27,6 +27,7 @@ import DoctorDashboard from './pages/medical/DoctorDashboard';
 import CustomerCommerce from './pages/commerce/CustomerCommerce';
 import ShopDashboard from './pages/commerce/ShopDashboard';
 import DeliveryDashboard from './pages/commerce/DeliveryDashboard';
+import CommerceCart from './pages/commerce/CommerceCart';
 
 import UserProfile from './pages/Profile/UserProfile';
 import CustomerOrders from './pages/orders/CustomerOrders';
@@ -73,6 +74,7 @@ const AppInner = () => {
           {user && (
             <>
               <Link to="/profile">My Profile</Link>
+              <Link to="/commerce/cart">Cart</Link>
               <Link to="/orders">My Orders</Link>
               <span>
                 {profile
@@ -192,6 +194,14 @@ const AppInner = () => {
             element={
               <RequireAuth allowedRoles={['CUSTOMER']}>
                 <CustomerCommerce />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/commerce/cart"
+            element={
+              <RequireAuth allowedRoles={['CUSTOMER']}>
+                <CommerceCart />
               </RequireAuth>
             }
           />
