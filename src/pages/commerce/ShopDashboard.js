@@ -8,6 +8,7 @@ import {
   onSnapshot,
   updateDoc,
   doc,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../AuthContext';
@@ -21,6 +22,7 @@ const ShopDashboard = () => {
   const [stock, setStock] = useState('');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [customerProfiles, setCustomerProfiles] = useState({});
 
   useEffect(() => {
     if (!user) return;
@@ -46,6 +48,32 @@ const ShopDashboard = () => {
       unsubOrders();
     };
   }, [user]);
+
+  useEffect(() => {
+    const loadCustomers = async () => {
+      const ids = Array.from(
+        new Set(orders.map((o) => o.customerId).filter(Boolean))
+      );
+      const profiles = {};
+      for (const id of ids) {
+        try {
+          const snap = await getDoc(doc(db, 'users', id));
+          if (snap.exists()) {
+            profiles[id] = snap.data();
+          }
+        } catch (err) {
+          console.error('Failed to fetch customer profile', err);
+        }
+      }
+      setCustomerProfiles(profiles);
+    };
+
+    if (orders.length > 0) {
+      loadCustomers();
+    } else {
+      setCustomerProfiles({});
+    }
+  }, [orders]);
 
   const createProduct = async (e) => {
     e.preventDefault();
@@ -155,6 +183,7 @@ const ShopDashboard = () => {
       <ul>
         {orders.map((o) => {
           const product = products.find((p) => p.id === o.productId);
+          const customer = customerProfiles[o.customerId];
           return (
             <li
               key={o.id}
@@ -170,7 +199,12 @@ const ShopDashboard = () => {
                 {product ? product.name : o.productId}
               </div>
               <div>Quantity: {o.quantity}</div>
-              <div>Customer: {o.customerId}</div>
+              <div>
+                Customer:{' '}
+                {customer ? customer.name : o.customerId}
+                {customer?.phone &&
+                  ` (Phone: ${customer.phone})`}
+              </div>
               <div>Address: {o.address}</div>
               <div>Status: {o.status}</div>
               <div style={{ marginTop: '4px' }}>

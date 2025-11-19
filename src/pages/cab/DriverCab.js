@@ -6,6 +6,7 @@ import {
   onSnapshot,
   updateDoc,
   doc,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../AuthContext';
@@ -14,6 +15,7 @@ const DriverCab = () => {
   const { user } = useAuth();
   const [pendingRequests, setPendingRequests] = useState([]);
   const [myRides, setMyRides] = useState([]);
+  const [customerProfiles, setCustomerProfiles] = useState({});
 
   useEffect(() => {
     if (!user) return;
@@ -23,7 +25,9 @@ const DriverCab = () => {
       where('status', '==', 'pending')
     );
     const unsubPending = onSnapshot(qPending, (snapshot) => {
-      setPendingRequests(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setPendingRequests(
+        snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
+      );
     });
 
     const qMine = query(
@@ -39,6 +43,36 @@ const DriverCab = () => {
       unsubMine();
     };
   }, [user]);
+
+  useEffect(() => {
+    const loadCustomers = async () => {
+      const ids = Array.from(
+        new Set(
+          myRides
+            .map((r) => r.customerId)
+            .filter(Boolean)
+        )
+      );
+      const profiles = {};
+      for (const id of ids) {
+        try {
+          const snap = await getDoc(doc(db, 'users', id));
+          if (snap.exists()) {
+            profiles[id] = snap.data();
+          }
+        } catch (err) {
+          console.error('Failed to fetch customer profile', err);
+        }
+      }
+      setCustomerProfiles(profiles);
+    };
+
+    if (myRides.length > 0) {
+      loadCustomers();
+    } else {
+      setCustomerProfiles({});
+    }
+  }, [myRides]);
 
   const acceptRequest = async (request) => {
     if (request.status !== 'pending') return;
@@ -73,23 +107,42 @@ const DriverCab = () => {
             </button>
           </li>
         ))}
+        {pendingRequests.length === 0 && (
+          <p>No pending cab requests.</p>
+        )}
       </ul>
 
       <h2>Your rides</h2>
       <ul>
-        {myRides.map((r) => (
-          <li key={r.id} style={{ marginBottom: '8px' }}>
-            {r.pickupLocation} → {r.dropLocation} | Status: {r.status}
-            {r.status === 'accepted' && (
-              <button
-                onClick={() => completeRide(r)}
-                style={{ marginLeft: '8px' }}
-              >
-                Mark completed
-              </button>
-            )}
-          </li>
-        ))}
+        {myRides.map((r) => {
+          const showContact = r.status === 'accepted';
+          const customer = showContact
+            ? customerProfiles[r.customerId]
+            : null;
+
+          return (
+            <li key={r.id} style={{ marginBottom: '8px' }}>
+              {r.pickupLocation} → {r.dropLocation} | Status: {r.status}
+              {showContact && (
+                <div>
+                  Customer:{' '}
+                  {customer ? customer.name : r.customerId}
+                  {customer?.phone &&
+                    ` (Phone: ${customer.phone})`}
+                </div>
+              )}
+              {r.status === 'accepted' && (
+                <button
+                  onClick={() => completeRide(r)}
+                  style={{ marginLeft: '8px' }}
+                >
+                  Mark completed
+                </button>
+              )}
+            </li>
+          );
+        })}
+        {myRides.length === 0 && <p>No rides yet.</p>}
       </ul>
     </div>
   );

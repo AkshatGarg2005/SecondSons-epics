@@ -8,6 +8,7 @@ import {
   serverTimestamp,
   updateDoc,
   doc,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../AuthContext';
@@ -20,6 +21,7 @@ const CustomerHousing = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [bookings, setBookings] = useState([]);
+  const [hostProfiles, setHostProfiles] = useState({});
 
   useEffect(() => {
     const q = query(
@@ -44,6 +46,36 @@ const CustomerHousing = () => {
     return () => unsub();
   }, [user]);
 
+  useEffect(() => {
+    const loadHosts = async () => {
+      const ids = Array.from(
+        new Set(
+          bookings
+            .map((b) => b.hostId)
+            .filter(Boolean)
+        )
+      );
+      const profiles = {};
+      for (const id of ids) {
+        try {
+          const snap = await getDoc(doc(db, 'users', id));
+          if (snap.exists()) {
+            profiles[id] = snap.data();
+          }
+        } catch (err) {
+          console.error('Failed to fetch host profile', err);
+        }
+      }
+      setHostProfiles(profiles);
+    };
+
+    if (bookings.length > 0) {
+      loadHosts();
+    } else {
+      setHostProfiles({});
+    }
+  }, [bookings]);
+
   const bookProperty = async (e) => {
     e.preventDefault();
     if (!selectedProperty || !startDate) return;
@@ -64,7 +96,9 @@ const CustomerHousing = () => {
   };
 
   const cancelBooking = async (booking) => {
-    if (booking.status !== 'pending') return;
+    if (booking.status !== 'pending' && booking.status !== 'confirmed') {
+      return;
+    }
     await updateDoc(doc(db, 'bookings', booking.id), {
       status: 'cancelled',
     });
@@ -104,6 +138,9 @@ const CustomerHousing = () => {
             </button>
           </li>
         ))}
+        {properties.length === 0 && (
+          <p>No properties available.</p>
+        )}
       </ul>
 
       {selectedProperty && (
@@ -159,13 +196,23 @@ const CustomerHousing = () => {
       <ul>
         {bookings.map((b) => {
           const property = properties.find((p) => p.id === b.propertyId);
+          const host = b.status === 'confirmed'
+            ? hostProfiles[b.hostId]
+            : null;
+
           return (
             <li key={b.id} style={{ marginBottom: '8px' }}>
               {property ? property.title : b.propertyId} | {b.stayType}{' '}
               | {b.startDate}
               {b.endDate && b.endDate !== b.startDate && ` → ${b.endDate}`}{' '}
               | Status: {b.status}
-              {b.status === 'pending' && (
+              {host && (
+                <div>
+                  Host: {host.name}
+                  {host.phone && ` (Phone: ${host.phone})`}
+                </div>
+              )}
+              {(b.status === 'pending' || b.status === 'confirmed') && (
                 <button
                   onClick={() => cancelBooking(b)}
                   style={{ marginLeft: '8px' }}
@@ -176,6 +223,9 @@ const CustomerHousing = () => {
             </li>
           );
         })}
+        {bookings.length === 0 && (
+          <p>No bookings yet.</p>
+        )}
       </ul>
     </div>
   );

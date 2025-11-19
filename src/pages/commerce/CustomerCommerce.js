@@ -6,6 +6,8 @@ import {
   onSnapshot,
   addDoc,
   serverTimestamp,
+  getDoc,
+  doc,
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../AuthContext';
@@ -17,6 +19,8 @@ const CustomerCommerce = () => {
   const [quantity, setQuantity] = useState(1);
   const [address, setAddress] = useState('');
   const [orders, setOrders] = useState([]);
+  const [shopProfiles, setShopProfiles] = useState({});
+  const [deliveryProfiles, setDeliveryProfiles] = useState({});
 
   useEffect(() => {
     const qProducts = query(
@@ -40,6 +44,63 @@ const CustomerCommerce = () => {
     });
     return () => unsubOrders();
   }, [user]);
+
+  useEffect(() => {
+    const loadShops = async () => {
+      const shopIds = new Set([
+        ...products.map((p) => p.shopId),
+        ...orders.map((o) => o.shopId),
+      ].filter(Boolean));
+      const profiles = {};
+      for (const id of shopIds) {
+        try {
+          const snap = await getDoc(doc(db, 'users', id));
+          if (snap.exists()) {
+            profiles[id] = snap.data();
+          }
+        } catch (err) {
+          console.error('Failed to fetch shop profile', err);
+        }
+      }
+      setShopProfiles(profiles);
+    };
+
+    if (products.length > 0 || orders.length > 0) {
+      loadShops();
+    } else {
+      setShopProfiles({});
+    }
+  }, [products, orders]);
+
+  useEffect(() => {
+    const loadDeliveryPartners = async () => {
+      const ids = Array.from(
+        new Set(
+          orders
+            .map((o) => o.deliveryPartnerId)
+            .filter(Boolean)
+        )
+      );
+      const profiles = {};
+      for (const id of ids) {
+        try {
+          const snap = await getDoc(doc(db, 'users', id));
+          if (snap.exists()) {
+            profiles[id] = snap.data();
+          }
+        } catch (err) {
+          console.error('Failed to fetch delivery profile', err);
+        }
+      }
+      setDeliveryProfiles(profiles);
+    };
+
+    if (orders.length > 0) {
+      loadDeliveryPartners();
+    } else {
+      setDeliveryProfiles({});
+    }
+  }, [orders]);
 
   const placeOrder = async (e) => {
     e.preventDefault();
@@ -65,19 +126,34 @@ const CustomerCommerce = () => {
       <h1>Quick Commerce (Customer)</h1>
 
       <h2>Available products</h2>
+      <p>
+        Each product may be listed from multiple shops with different prices.
+        Choose the shop you want.
+      </p>
       <ul>
-        {products.map((p) => (
-          <li key={p.id} style={{ marginBottom: '6px' }}>
-            {p.name} ({p.category}) | ₹{p.price}{' '}
-            {p.stock != null && <span>| Stock: {p.stock}</span>}
-            <button
-              onClick={() => setSelectedProduct(p)}
-              style={{ marginLeft: '8px' }}
-            >
-              Select
-            </button>
-          </li>
-        ))}
+        {products.map((p) => {
+          const shop = shopProfiles[p.shopId];
+          return (
+            <li key={p.id} style={{ marginBottom: '6px' }}>
+              <div>
+                <strong>{p.name}</strong> ({p.category}) | ₹{p.price}
+              </div>
+              <div>
+                Shop:{' '}
+                {shop ? shop.name : p.shopId}
+                {shop?.phone && ` (Phone: ${shop.phone})`}
+              </div>
+              {p.stock != null && <div>Stock: {p.stock}</div>}
+              <button
+                onClick={() => setSelectedProduct(p)}
+                style={{ marginTop: '4px' }}
+              >
+                Select this shop
+              </button>
+            </li>
+          );
+        })}
+        {products.length === 0 && <p>No products available.</p>}
       </ul>
 
       {selectedProduct && (
@@ -119,14 +195,42 @@ const CustomerCommerce = () => {
 
       <h2>Your commerce orders</h2>
       <ul>
-        {orders.map((o) => (
-          <li key={o.id} style={{ marginBottom: '6px' }}>
-            Product: {o.productId} | Qty: {o.quantity} | Status: {o.status}{' '}
-            {o.deliveryPartnerId && (
-              <span>| Delivery partner: {o.deliveryPartnerId}</span>
-            )}
-          </li>
-        ))}
+        {orders.map((o) => {
+          const product = products.find((p) => p.id === o.productId);
+          const shop = shopProfiles[o.shopId];
+          const delivery =
+            o.deliveryPartnerId &&
+            o.status !== 'delivered'
+              ? deliveryProfiles[o.deliveryPartnerId]
+              : null;
+
+          return (
+            <li
+              key={o.id}
+              style={{ marginBottom: '6px', padding: '6px', border: '1px solid #ccc' }}
+            >
+              <div>
+                Product:{' '}
+                {product ? product.name : o.productId} | Qty:{' '}
+                {o.quantity}
+              </div>
+              <div>
+                Shop:{' '}
+                {shop ? shop.name : o.shopId}
+                {shop?.phone && ` (Phone: ${shop.phone})`}
+              </div>
+              <div>Status: {o.status}</div>
+              <div>Address: {o.address}</div>
+              {delivery && (
+                <div>
+                  Delivery partner: {delivery.name}
+                  {delivery.phone && ` (Phone: ${delivery.phone})`}
+                </div>
+              )}
+            </li>
+          );
+        })}
+        {orders.length === 0 && <p>No orders yet.</p>}
       </ul>
     </div>
   );

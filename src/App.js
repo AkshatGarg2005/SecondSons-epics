@@ -29,6 +29,7 @@ import ShopDashboard from './pages/commerce/ShopDashboard';
 import DeliveryDashboard from './pages/commerce/DeliveryDashboard';
 
 import UserProfile from './pages/Profile/UserProfile';
+import CustomerOrders from './pages/orders/CustomerOrders';
 
 const RequireAuth = ({ children, allowedRoles }) => {
   const { user, profile, loading } = useAuth();
@@ -66,6 +67,7 @@ const AppInner = () => {
           {user && (
             <>
               <Link to="/profile">My Profile</Link>
+              <Link to="/orders">My Orders</Link>
               <span>
                 {profile
                   ? `Logged in as: ${profile.name} (${profile.role})`
@@ -98,6 +100,16 @@ const AppInner = () => {
             element={
               <RequireAuth>
                 <UserProfile />
+              </RequireAuth>
+            }
+          />
+
+          {/* Orders overview for customer */}
+          <Route
+            path="/orders"
+            element={
+              <RequireAuth allowedRoles={['CUSTOMER']}>
+                <CustomerOrders />
               </RequireAuth>
             }
           />
@@ -143,7 +155,7 @@ const AppInner = () => {
             path="/housing/host"
             element={
               <RequireAuth allowedRoles={['HOST']}>
-                <HostProperties />
+                HostProperties />
               </RequireAuth>
             }
           />
@@ -194,7 +206,7 @@ const AppInner = () => {
           <Route
             path="/commerce/delivery"
             element={
-              <RequireAuth allowedRoles={['DELIVERY', 'DRIVER']}>
+              <RequireAuth allowedRoles={['DELIVERY']}>
                 <DeliveryDashboard />
               </RequireAuth>
             }

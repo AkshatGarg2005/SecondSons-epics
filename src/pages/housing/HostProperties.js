@@ -8,6 +8,7 @@ import {
   onSnapshot,
   updateDoc,
   doc,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../AuthContext';
@@ -52,6 +53,7 @@ const HostProperties = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [properties, setProperties] = useState([]);
   const [hostBookings, setHostBookings] = useState([]);
+  const [customerProfiles, setCustomerProfiles] = useState({});
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -69,7 +71,9 @@ const HostProperties = () => {
       where('hostId', '==', user.uid)
     );
     const unsubBookings = onSnapshot(qBookings, (snapshot) => {
-      setHostBookings(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setHostBookings(
+        snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
+      );
     });
 
     return () => {
@@ -77,6 +81,36 @@ const HostProperties = () => {
       unsubBookings();
     };
   }, [user]);
+
+  useEffect(() => {
+    const loadCustomers = async () => {
+      const ids = Array.from(
+        new Set(
+          hostBookings
+            .map((b) => b.customerId)
+            .filter(Boolean)
+        )
+      );
+      const profiles = {};
+      for (const id of ids) {
+        try {
+          const snap = await getDoc(doc(db, 'users', id));
+          if (snap.exists()) {
+            profiles[id] = snap.data();
+          }
+        } catch (err) {
+          console.error('Failed to fetch customer profile', err);
+        }
+      }
+      setCustomerProfiles(profiles);
+    };
+
+    if (hostBookings.length > 0) {
+      loadCustomers();
+    } else {
+      setCustomerProfiles({});
+    }
+  }, [hostBookings]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -277,6 +311,7 @@ const HostProperties = () => {
       <ul>
         {hostBookings.map((b) => {
           const prop = properties.find((p) => p.id === b.propertyId);
+          const customer = customerProfiles[b.customerId];
           return (
             <li
               key={b.id}
@@ -295,6 +330,13 @@ const HostProperties = () => {
                 {b.endDate && b.endDate !== b.startDate && ` → ${b.endDate}`}
               </div>
               <div>Status: {b.status}</div>
+              {customer && (
+                <div>
+                  Customer: {customer.name}
+                  {customer.phone &&
+                    ` (Phone: ${customer.phone})`}
+                </div>
+              )}
               {b.status === 'pending' && (
                 <>
                   <button onClick={() => confirmBooking(b)}>

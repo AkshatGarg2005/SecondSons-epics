@@ -46,6 +46,9 @@ const Dashboard = () => {
             <li>
               <Link to="/commerce/customer">Order from quick commerce</Link>
             </li>
+            <li>
+              <Link to="/orders">My orders (all in one)</Link>
+            </li>
           </ul>
         </>
       )}
@@ -56,9 +59,6 @@ const Dashboard = () => {
           <ul>
             <li>
               <Link to="/cab/driver">Cab requests</Link>
-            </li>
-            <li>
-              <Link to="/commerce/delivery">Delivery jobs</Link>
             </li>
           </ul>
         </>
