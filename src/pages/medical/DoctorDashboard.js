@@ -13,6 +13,8 @@ import { useAuth } from '../../AuthContext';
 
 import ChatWindow from '../../components/ChatWindow';
 
+
+
 const DoctorDashboard = () => {
   const { user } = useAuth();
   const [pending, setPending] = useState([]);

@@ -13,6 +13,8 @@ import { useAuth } from '../../AuthContext';
 
 import ChatWindow from '../../components/ChatWindow';
 
+
+
 const WorkerDashboard = () => {
   const { user, profile } = useAuth();
   const [openRequests, setOpenRequests] = useState([]);

@@ -2,8 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 
+
 const Dashboard = () => {
-  const { profile, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
 
   if (loading) {
     return <div>Loading...</div>;
@@ -114,6 +115,17 @@ const Dashboard = () => {
           <ul>
             <li>
               <Link to="/services/worker">Service jobs</Link>
+            </li>
+          </ul>
+        </>
+      )}
+
+      {role === 'SUPPORT' && (
+        <>
+          <h2>Support actions</h2>
+          <ul>
+            <li>
+              <Link to="/support/dashboard">Support Dashboard</Link>
             </li>
           </ul>
         </>

@@ -34,6 +34,10 @@ import CustomerOrders from './pages/orders/CustomerOrders';
 import LandingPage from './pages/LandingPage';
 import AiAssistant from './pages/assistant/AiAssistant';
 
+import CustomerSupport from './pages/support/CustomerSupport';
+import SupportDashboard from './pages/support/SupportDashboard';
+import ProviderSupportPage from './pages/support/ProviderSupportPage';
+
 const RequireAuth = ({ children, allowedRoles }) => {
   const { user, profile, loading } = useAuth();
 
@@ -78,6 +82,15 @@ const AppInner = () => {
               <Link to="/commerce/cart">Cart</Link>
               <Link to="/orders">My Orders</Link>
               <Link to="/assistant">AI Assistant</Link>
+              {profile?.role === 'CUSTOMER' && (
+                <Link to="/support/customer">Support</Link>
+              )}
+              {profile?.role === 'SUPPORT' && (
+                <Link to="/support/dashboard">Support Dashboard</Link>
+              )}
+              {['SHOP', 'DRIVER', 'WORKER', 'HOST', 'DOCTOR', 'DELIVERY'].includes(profile?.role) && (
+                <Link to="/support/provider">Support</Link>
+              )}
               <span>
                 {profile
                   ? `Logged in as: ${profile.name} (${profile.role})`
@@ -230,6 +243,32 @@ const AppInner = () => {
             element={
               <RequireAuth allowedRoles={['DELIVERY']}>
                 <DeliveryDashboard />
+              </RequireAuth>
+            }
+          />
+
+          {/* Customer Support */}
+          <Route
+            path="/support/customer"
+            element={
+              <RequireAuth allowedRoles={['CUSTOMER']}>
+                <CustomerSupport />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/support/dashboard"
+            element={
+              <RequireAuth allowedRoles={['SUPPORT']}>
+                <SupportDashboard />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/support/provider"
+            element={
+              <RequireAuth allowedRoles={['SHOP', 'DRIVER', 'WORKER', 'HOST', 'DOCTOR', 'DELIVERY']}>
+                <ProviderSupportPage />
               </RequireAuth>
             }
           />

@@ -13,6 +13,7 @@ import {
 import { db } from '../../firebase';
 import { useAuth } from '../../AuthContext';
 
+
 const uploadImageToCloudinary = async (file) => {
   const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
@@ -39,6 +40,8 @@ const uploadImageToCloudinary = async (file) => {
   }
   return data.secure_url;
 };
+
+
 
 const HostProperties = () => {
   const { user } = useAuth();

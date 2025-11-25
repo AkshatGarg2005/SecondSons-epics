@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
-const ChatWindow = ({ requestId, currentUser, onClose }) => {
+const ChatWindow = ({ requestId, currentUser, onClose, title = 'Chat' }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef(null);
@@ -79,7 +79,7 @@ const ChatWindow = ({ requestId, currentUser, onClose }) => {
                     borderTopRightRadius: '8px',
                 }}
             >
-                <strong>Chat</strong>
+                <strong>{title}</strong>
                 <button
                     onClick={onClose}
                     style={{
