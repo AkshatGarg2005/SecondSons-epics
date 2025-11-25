@@ -452,6 +452,13 @@ const CustomerOrders = () => {
                     {driver.phone && ` (Phone: ${driver.phone})`}
                   </div>
                 )}
+                {c.status === 'in_progress' && c.rideOtp && (
+                  <div style={{ marginTop: '5px', padding: '5px', backgroundColor: '#e0f7fa', border: '1px solid #006064' }}>
+                    <strong>Ride OTP: {c.rideOtp}</strong>
+                    <br />
+                    <small>Share this code with the driver to complete the ride.</small>
+                  </div>
+                )}
                 <div style={{ marginTop: '4px' }}>
                   {c.status === 'quoted' && (
                     <button
@@ -515,6 +522,13 @@ const CustomerOrders = () => {
                   <div>
                     Worker: {worker.name}
                     {worker.phone && ` (Phone: ${worker.phone})`}
+                  </div>
+                )}
+                {s.status === 'in_progress' && s.serviceOtp && (
+                  <div style={{ marginTop: '5px', padding: '5px', backgroundColor: '#e0f7fa', border: '1px solid #006064' }}>
+                    <strong>Service OTP: {s.serviceOtp}</strong>
+                    <br />
+                    <small>Share this code with the worker to complete the job.</small>
                   </div>
                 )}
                 <div style={{ marginTop: '4px' }}>

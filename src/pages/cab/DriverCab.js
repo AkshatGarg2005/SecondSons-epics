@@ -117,11 +117,39 @@ const DriverCab = () => {
 
 
 
+  const startRide = async (request) => {
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    await updateDoc(doc(db, 'cabRequests', request.id), {
+      status: 'in_progress',
+      rideOtp: otp,
+    });
+    alert('Ride started! OTP generated.');
+  };
+
+  const [otpInputs, setOtpInputs] = useState({});
+
+  const handleOtpChange = (id, value) => {
+    setOtpInputs((prev) => ({ ...prev, [id]: value }));
+  };
+
   const completeRide = async (request) => {
-    if (request.status !== 'accepted') return;
+    if (request.status !== 'in_progress') return;
+
+    const enteredOtp = otpInputs[request.id];
+    if (!enteredOtp) {
+      alert('Please enter the OTP provided by the customer.');
+      return;
+    }
+
+    if (enteredOtp !== request.rideOtp) {
+      alert('Incorrect OTP. Please try again.');
+      return;
+    }
+
     await updateDoc(doc(db, 'cabRequests', request.id), {
       status: 'completed',
     });
+    alert('Ride completed successfully!');
   };
 
   return (
@@ -186,13 +214,29 @@ const DriverCab = () => {
               <div style={{ marginTop: '4px' }}>
                 {r.status === 'accepted' && (
                   <button
-                    onClick={() => completeRide(r)}
+                    onClick={() => startRide(r)}
                     style={{ marginRight: '8px' }}
                   >
-                    Mark completed
+                    Start Ride (Generate OTP)
                   </button>
                 )}
-                {r.status === 'accepted' && (
+
+                {r.status === 'in_progress' && (
+                  <div style={{ marginTop: '10px' }}>
+                    <input
+                      type="text"
+                      placeholder="Enter Customer OTP"
+                      value={otpInputs[r.id] || ''}
+                      onChange={(e) => handleOtpChange(r.id, e.target.value)}
+                      style={{ marginRight: '10px', padding: '5px' }}
+                    />
+                    <button onClick={() => completeRide(r)}>
+                      Verify & Complete
+                    </button>
+                  </div>
+                )}
+
+                {(r.status === 'accepted' || r.status === 'in_progress') && (
                   <button onClick={() => setActiveChatRequestId(r.id)}>
                     Chat
                   </button>

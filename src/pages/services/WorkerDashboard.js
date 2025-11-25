@@ -110,11 +110,39 @@ const WorkerDashboard = () => {
     });
   };
 
+  const startJob = async (job) => {
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    await updateDoc(doc(db, 'serviceRequests', job.id), {
+      status: 'in_progress',
+      serviceOtp: otp,
+    });
+    alert('Job started! OTP generated.');
+  };
+
+  const [otpInputs, setOtpInputs] = useState({});
+
+  const handleOtpChange = (jobId, value) => {
+    setOtpInputs((prev) => ({ ...prev, [jobId]: value }));
+  };
+
   const markCompleted = async (job) => {
-    if (job.status !== 'accepted') return;
+    if (job.status !== 'in_progress') return;
+
+    const enteredOtp = otpInputs[job.id];
+    if (!enteredOtp) {
+      alert('Please enter the OTP provided by the customer.');
+      return;
+    }
+
+    if (enteredOtp !== job.serviceOtp) {
+      alert('Incorrect OTP. Please try again.');
+      return;
+    }
+
     await updateDoc(doc(db, 'serviceRequests', job.id), {
       status: 'completed',
     });
+    alert('Job marked as completed!');
   };
 
   if (!profile) {
@@ -227,13 +255,29 @@ const WorkerDashboard = () => {
               <div style={{ marginTop: '4px' }}>
                 {job.status === 'accepted' && (
                   <button
-                    onClick={() => markCompleted(job)}
+                    onClick={() => startJob(job)}
                     style={{ marginRight: '8px' }}
                   >
-                    Mark completed
+                    Start Job (Generate OTP)
                   </button>
                 )}
-                {job.status === 'accepted' && (
+
+                {job.status === 'in_progress' && (
+                  <div style={{ marginTop: '10px' }}>
+                    <input
+                      type="text"
+                      placeholder="Enter Customer OTP"
+                      value={otpInputs[job.id] || ''}
+                      onChange={(e) => handleOtpChange(job.id, e.target.value)}
+                      style={{ marginRight: '10px', padding: '5px' }}
+                    />
+                    <button onClick={() => markCompleted(job)}>
+                      Verify & Complete
+                    </button>
+                  </div>
+                )}
+
+                {(job.status === 'accepted' || job.status === 'in_progress') && (
                   <button onClick={() => setActiveChatRequestId(job.id)}>
                     Chat
                   </button>
