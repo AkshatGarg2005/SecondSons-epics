@@ -26,8 +26,8 @@ import DoctorDashboard from './pages/medical/DoctorDashboard';
 
 import CustomerCommerce from './pages/commerce/CustomerCommerce';
 import ShopDashboard from './pages/commerce/ShopDashboard';
-import RestaurantDashboard from './pages/commerce/RestaurantDashboard';
-import PharmacyDashboard from './pages/commerce/PharmacyDashboard';
+import RestaurantDashboard from './pages/food/RestaurantDashboard';
+import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard';
 import DeliveryDashboard from './pages/commerce/DeliveryDashboard';
 import CommerceCart from './pages/commerce/CommerceCart';
 
