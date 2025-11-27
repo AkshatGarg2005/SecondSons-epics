@@ -20,6 +20,7 @@ import WorkerDashboard from './pages/services/WorkerDashboard';
 
 import HostProperties from './pages/housing/HostProperties';
 import CustomerHousing from './pages/housing/CustomerHousing';
+import PropertyDetails from './pages/housing/PropertyDetails';
 
 import MedicalCustomer from './pages/medical/MedicalCustomer';
 import DoctorDashboard from './pages/medical/DoctorDashboard';
@@ -194,6 +195,14 @@ const AppInner = () => {
             element={
               <RequireAuth allowedRoles={['CUSTOMER']}>
                 <CustomerHousing />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/property/:propertyId"
+            element={
+              <RequireAuth allowedRoles={['CUSTOMER']}>
+                <PropertyDetails />
               </RequireAuth>
             }
           />

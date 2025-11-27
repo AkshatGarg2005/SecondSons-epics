@@ -13,10 +13,7 @@ import { useAuth } from '../../AuthContext';
 const CustomerHousing = () => {
   const { user } = useAuth();
   const [properties, setProperties] = useState([]);
-  const [selectedProperty, setSelectedProperty] = useState(null);
-  const [stayType, setStayType] = useState('DAY');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const q = query(
@@ -29,113 +26,102 @@ const CustomerHousing = () => {
     return () => unsub();
   }, []);
 
-  const bookProperty = async (e) => {
-    e.preventDefault();
-    if (!selectedProperty || !startDate) return;
-
-    await addDoc(collection(db, 'bookings'), {
-      propertyId: selectedProperty.id,
-      hostId: selectedProperty.hostId,
-      customerId: user.uid,
-      stayType,
-      startDate,
-      endDate: stayType === 'DAY' ? endDate || startDate : endDate || null,
-      status: 'pending',
-      createdAt: serverTimestamp(),
-    });
-
-    setStartDate('');
-    setEndDate('');
-  };
+  const filteredProperties = properties.filter((p) => {
+    const term = searchTerm.toLowerCase();
+    const address = (p.address || '').toLowerCase();
+    const title = (p.title || '').toLowerCase();
+    return address.includes(term) || title.includes(term);
+  });
 
   return (
     <div>
       <h1>Housing (Customer)</h1>
       <p>Your house bookings are available in the "My Orders" page.</p>
 
+      <div style={{ marginBottom: '20px' }}>
+        <input
+          type="text"
+          placeholder="Search by location or property name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            padding: '10px',
+            width: '100%',
+            maxWidth: '400px',
+            borderRadius: '5px',
+            border: '1px solid #ccc',
+            fontSize: '16px'
+          }}
+        />
+      </div>
+
       <h2>Available properties</h2>
-      <ul>
-        {properties.map((p) => (
-          <li
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+        {filteredProperties.map((p) => (
+          <div
             key={p.id}
             style={{
-              marginBottom: '8px',
-              padding: '6px',
               border: '1px solid #ccc',
-            }}
-          >
-            <strong>{p.title}</strong> ({p.propertyType})
-            {p.pricePerDay && (
-              <span> | ₹{p.pricePerDay}/day</span>
-            )}
-            {p.pricePerMonth && (
-              <span> | ₹{p.pricePerMonth}/month</span>
-            )}
-            <div>{p.address}</div>
-            {p.facilities && p.facilities.length > 0 && (
-              <div>Facilities: {p.facilities.join(', ')}</div>
-            )}
-            <button
-              onClick={() => setSelectedProperty(p)}
-              style={{ marginTop: '4px' }}
-            >
-              Select
-            </button>
-          </li>
-        ))}
-        {properties.length === 0 && (
-          <p>No properties available.</p>
-        )}
-      </ul>
-
-      {selectedProperty && (
-        <div style={{ marginTop: '16px' }}>
-          <h2>Book: {selectedProperty.title}</h2>
-          <form
-            onSubmit={bookProperty}
-            style={{
+              borderRadius: '8px',
+              padding: '10px',
+              width: '300px',
               display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              maxWidth: '300px',
+              flexDirection: 'column'
             }}
           >
-            <label>
-              Stay type
-              <select
-                value={stayType}
-                onChange={(e) => setStayType(e.target.value)}
-              >
-                <option value="DAY">Short term (day-based)</option>
-                <option value="LONG_TERM">Long term (rental)</option>
-              </select>
-            </label>
-
-            <label>
-              Start date
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                required
+            {/* Main Image */}
+            {p.images && p.images.length > 0 ? (
+              <img
+                src={p.images[0]}
+                alt={p.title}
+                style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '4px', marginBottom: '10px' }}
               />
-            </label>
-
-            {stayType === 'DAY' && (
-              <label>
-                End date
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </label>
+            ) : p.imageUrl ? (
+              <img
+                src={p.imageUrl}
+                alt={p.title}
+                style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '4px', marginBottom: '10px' }}
+              />
+            ) : (
+              <div style={{ width: '100%', height: '200px', backgroundColor: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', marginBottom: '10px' }}>
+                No Image
+              </div>
             )}
 
-            <button type="submit">Book property</button>
-          </form>
-        </div>
-      )}
+            <h3>{p.title}</h3>
+            <p style={{ color: '#666', fontSize: '0.9em' }}>{p.propertyType}</p>
+            <p style={{ margin: '5px 0' }}>{p.address}</p>
+
+            <div style={{ marginTop: 'auto' }}>
+              {p.pricePerDay && (
+                <div style={{ fontWeight: 'bold' }}>₹{p.pricePerDay}/day</div>
+              )}
+              {p.pricePerMonth && (
+                <div style={{ fontWeight: 'bold' }}>₹{p.pricePerMonth}/month</div>
+              )}
+
+              <a
+                href={`/property/${p.id}`}
+                style={{
+                  display: 'block',
+                  textAlign: 'center',
+                  backgroundColor: '#2196F3',
+                  color: 'white',
+                  padding: '10px',
+                  borderRadius: '5px',
+                  textDecoration: 'none',
+                  marginTop: '10px'
+                }}
+              >
+                View Details
+              </a>
+            </div>
+          </div>
+        ))}
+        {filteredProperties.length === 0 && (
+          <p>No properties found matching your search.</p>
+        )}
+      </div>
     </div>
   );
 };
