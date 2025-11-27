@@ -342,9 +342,14 @@ const CustomerOrders = () => {
     ) {
       return;
     }
+    const startOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    const endOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
     await updateDoc(doc(db, 'serviceRequests', s.id), {
       status: 'accepted',
       workerId: s.proposedByWorkerId,
+      startOtp,
+      endOtp,
     });
   };
 
@@ -713,11 +718,18 @@ const CustomerOrders = () => {
                     {worker.phone && ` (Phone: ${worker.phone})`}
                   </div>
                 )}
-                {s.status === 'in_progress' && s.serviceOtp && (
+                {s.status === 'accepted' && s.startOtp && (
                   <div style={{ marginTop: '5px', padding: '5px', backgroundColor: '#e0f7fa', border: '1px solid #006064' }}>
-                    <strong>Service OTP: {s.serviceOtp}</strong>
+                    <strong>Start OTP: {s.startOtp}</strong>
                     <br />
-                    <small>Share this code with the worker to complete the job.</small>
+                    <small>Share this code with the worker to START the job.</small>
+                  </div>
+                )}
+                {s.status === 'in_progress' && s.endOtp && (
+                  <div style={{ marginTop: '5px', padding: '5px', backgroundColor: '#e0f7fa', border: '1px solid #006064' }}>
+                    <strong>End OTP: {s.endOtp}</strong>
+                    <br />
+                    <small>Share this code with the worker to COMPLETE the job.</small>
                   </div>
                 )}
                 <div style={{ marginTop: '4px' }}>

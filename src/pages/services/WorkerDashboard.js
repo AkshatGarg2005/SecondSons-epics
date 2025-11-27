@@ -110,19 +110,29 @@ const WorkerDashboard = () => {
     });
   };
 
-  const startJob = async (job) => {
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    await updateDoc(doc(db, 'serviceRequests', job.id), {
-      status: 'in_progress',
-      serviceOtp: otp,
-    });
-    alert('Job started! OTP generated.');
-  };
-
   const [otpInputs, setOtpInputs] = useState({});
 
   const handleOtpChange = (jobId, value) => {
     setOtpInputs((prev) => ({ ...prev, [jobId]: value }));
+  };
+
+  const startJob = async (job) => {
+    const enteredOtp = otpInputs[job.id];
+    if (!enteredOtp) {
+      alert('Please enter the Start OTP provided by the customer.');
+      return;
+    }
+
+    if (enteredOtp !== job.startOtp) {
+      alert('Incorrect Start OTP. Please try again.');
+      return;
+    }
+
+    await updateDoc(doc(db, 'serviceRequests', job.id), {
+      status: 'in_progress',
+    });
+    alert('Job started successfully!');
+    setOtpInputs((prev) => ({ ...prev, [job.id]: '' })); // Clear input
   };
 
   const markCompleted = async (job) => {
@@ -130,12 +140,12 @@ const WorkerDashboard = () => {
 
     const enteredOtp = otpInputs[job.id];
     if (!enteredOtp) {
-      alert('Please enter the OTP provided by the customer.');
+      alert('Please enter the End OTP provided by the customer.');
       return;
     }
 
-    if (enteredOtp !== job.serviceOtp) {
-      alert('Incorrect OTP. Please try again.');
+    if (enteredOtp !== job.endOtp) {
+      alert('Incorrect End OTP. Please try again.');
       return;
     }
 
@@ -143,6 +153,7 @@ const WorkerDashboard = () => {
       status: 'completed',
     });
     alert('Job marked as completed!');
+    setOtpInputs((prev) => ({ ...prev, [job.id]: '' })); // Clear input
   };
 
   if (!profile) {
@@ -254,19 +265,28 @@ const WorkerDashboard = () => {
               )}
               <div style={{ marginTop: '4px' }}>
                 {job.status === 'accepted' && (
-                  <button
-                    onClick={() => startJob(job)}
-                    style={{ marginRight: '8px' }}
-                  >
-                    Start Job (Generate OTP)
-                  </button>
+                  <div style={{ marginTop: '10px' }}>
+                    <input
+                      type="text"
+                      placeholder="Enter Start OTP"
+                      value={otpInputs[job.id] || ''}
+                      onChange={(e) => handleOtpChange(job.id, e.target.value)}
+                      style={{ marginRight: '10px', padding: '5px' }}
+                    />
+                    <button
+                      onClick={() => startJob(job)}
+                      style={{ marginRight: '8px' }}
+                    >
+                      Verify & Start Job
+                    </button>
+                  </div>
                 )}
 
                 {job.status === 'in_progress' && (
                   <div style={{ marginTop: '10px' }}>
                     <input
                       type="text"
-                      placeholder="Enter Customer OTP"
+                      placeholder="Enter End OTP"
                       value={otpInputs[job.id] || ''}
                       onChange={(e) => handleOtpChange(job.id, e.target.value)}
                       style={{ marginRight: '10px', padding: '5px' }}
