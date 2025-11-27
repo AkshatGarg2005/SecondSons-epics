@@ -23,6 +23,8 @@ const CustomerCommerce = ({ mode = 'all' }) => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [specialRequest, setSpecialRequest] = useState('');
+  const [buyNowItem, setBuyNowItem] = useState(null);
+  const [buyNowQty, setBuyNowQty] = useState(1);
 
   useEffect(() => {
     // All shops (users with role SHOP)
@@ -150,6 +152,66 @@ const CustomerCommerce = ({ mode = 'all' }) => {
     } catch (err) {
       console.error(err);
       setError(err.message || 'Failed to add to cart');
+    }
+  };
+
+
+
+  const buyNow = (product) => {
+    setMessage('');
+    setError('');
+
+    if (!savedAddress) {
+      setError('Please set your address in My Profile before placing an order.');
+      return;
+    }
+
+    if (product.type === 'medicine' && product.expiryDate) {
+      if (new Date(product.expiryDate) < new Date()) {
+        setError('Cannot order expired medicine.');
+        return;
+      }
+    }
+
+    setBuyNowItem(product);
+    setBuyNowQty(1);
+  };
+
+  const cancelBuyNow = () => {
+    setBuyNowItem(null);
+    setBuyNowQty(1);
+  };
+
+  const confirmBuyNow = async () => {
+    if (!buyNowItem) return;
+
+    const qty = parseInt(buyNowQty, 10);
+    if (Number.isNaN(qty) || qty <= 0) {
+      alert('Invalid quantity');
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, 'commerceOrders'), {
+        customerId: user.uid,
+        shopId: buyNowItem.shopId,
+        productId: buyNowItem.id,
+        quantity: qty,
+        specialRequest: specialRequest || null,
+        prescriptionUrl: null,
+        status: 'pending',
+        isRepeatable: false,
+        repeatFrequency: null,
+        deliveryPartnerId: null,
+        address: savedAddress,
+        createdAt: serverTimestamp(),
+      });
+      setMessage('Order placed successfully! Check "My Orders".');
+      setSpecialRequest('');
+      setBuyNowItem(null);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to place order.');
     }
   };
 
@@ -321,6 +383,15 @@ const CustomerCommerce = ({ mode = 'all' }) => {
                   >
                     Add to cart
                   </button>
+                  {selectedShop.role !== 'PHARMACY' && (
+                    <button
+                      onClick={() => buyNow(p)}
+                      style={{ marginTop: '4px', marginLeft: '8px', backgroundColor: '#ff9800', color: 'white' }}
+                      disabled={!savedAddress || isExpired}
+                    >
+                      Buy Now
+                    </button>
+                  )}
                 </li>
               );
             })}
@@ -328,6 +399,46 @@ const CustomerCommerce = ({ mode = 'all' }) => {
               <p>No items available.</p>
             )}
           </ul>
+        </div>
+      )}
+      {/* Buy Now Modal */}
+      {buyNowItem && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '20px',
+            borderRadius: '8px',
+            width: '300px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+          }}>
+            <h3>Buy Now: {buyNowItem.name}</h3>
+            <p>Price: ₹{buyNowItem.price}</p>
+            <label style={{ display: 'block', marginBottom: '10px' }}>
+              Quantity:
+              <input
+                type="number"
+                min="1"
+                value={buyNowQty}
+                onChange={(e) => setBuyNowQty(e.target.value)}
+                style={{ width: '100%', marginTop: '5px', padding: '5px' }}
+              />
+            </label>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button onClick={cancelBuyNow} style={{ backgroundColor: '#ccc' }}>Cancel</button>
+              <button onClick={confirmBuyNow} style={{ backgroundColor: '#ff9800', color: 'white' }}>Confirm Order</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
