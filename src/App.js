@@ -30,6 +30,7 @@ import RestaurantDashboard from './pages/food/RestaurantDashboard';
 import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard';
 import DeliveryDashboard from './pages/commerce/DeliveryDashboard';
 import CommerceCart from './pages/commerce/CommerceCart';
+import ProductDetails from './pages/commerce/ProductDetails';
 
 import UserProfile from './pages/Profile/UserProfile';
 import CustomerOrders from './pages/orders/CustomerOrders';
@@ -237,6 +238,22 @@ const AppInner = () => {
             element={
               <RequireAuth allowedRoles={['CUSTOMER']}>
                 <CustomerCommerce mode="medicine" />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/commerce/medicine"
+            element={
+              <RequireAuth allowedRoles={['CUSTOMER']}>
+                <CustomerCommerce mode="medicine" />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/product/:productId"
+            element={
+              <RequireAuth allowedRoles={['CUSTOMER']}>
+                <ProductDetails />
               </RequireAuth>
             }
           />

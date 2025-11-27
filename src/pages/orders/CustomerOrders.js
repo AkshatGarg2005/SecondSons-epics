@@ -400,6 +400,43 @@ const CustomerOrders = () => {
     }
   };
 
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [selectedOrderForRating, setSelectedOrderForRating] = useState(null);
+  const [ratingValue, setRatingValue] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+
+  const openRatingModal = (order) => {
+    setSelectedOrderForRating(order);
+    setRatingValue(5);
+    setReviewText('');
+    setRatingModalOpen(true);
+  };
+
+  const closeRatingModal = () => {
+    setRatingModalOpen(false);
+    setSelectedOrderForRating(null);
+  };
+
+  const submitReview = async () => {
+    if (!selectedOrderForRating) return;
+
+    try {
+      await addDoc(collection(db, 'productReviews'), {
+        productId: selectedOrderForRating.productId,
+        userId: user.uid,
+        orderId: selectedOrderForRating.id,
+        rating: parseInt(ratingValue, 10),
+        reviewText: reviewText,
+        createdAt: serverTimestamp(),
+      });
+      alert('Review submitted successfully!');
+      closeRatingModal();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to submit review.');
+    }
+  };
+
   const cancelCommerceOrder = async (order) => {
     if (order.status !== 'pending') return;
     if (window.confirm('Are you sure you want to cancel this order?')) {
@@ -516,6 +553,14 @@ const CustomerOrders = () => {
                     style={{ marginLeft: '8px', backgroundColor: '#d32f2f', color: 'white' }}
                   >
                     Cancel Order
+                  </button>
+                )}
+                {o.status === 'delivered' && (
+                  <button
+                    onClick={() => openRatingModal(o)}
+                    style={{ marginLeft: '8px', backgroundColor: '#4CAF50', color: 'white' }}
+                  >
+                    Rate Product
                   </button>
                 )}
               </div>
@@ -904,6 +949,58 @@ const CustomerOrders = () => {
           currentUser={user}
           onClose={() => setActiveChatRequestId(null)}
         />
+      )}
+      {/* Rating Modal */}
+      {ratingModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '20px',
+            borderRadius: '8px',
+            width: '300px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+          }}>
+            <h3>Rate Product</h3>
+            <label style={{ display: 'block', marginBottom: '10px' }}>
+              Rating:
+              <select
+                value={ratingValue}
+                onChange={(e) => setRatingValue(e.target.value)}
+                style={{ marginLeft: '10px', padding: '5px' }}
+              >
+                <option value="5">5 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="2">2 Stars</option>
+                <option value="1">1 Star</option>
+              </select>
+            </label>
+            <label style={{ display: 'block', marginBottom: '10px' }}>
+              Review:
+              <textarea
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                style={{ width: '100%', height: '80px', marginTop: '5px', padding: '5px' }}
+                placeholder="Write your review here..."
+              />
+            </label>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button onClick={closeRatingModal} style={{ backgroundColor: '#ccc' }}>Cancel</button>
+              <button onClick={submitReview} style={{ backgroundColor: '#4CAF50', color: 'white' }}>Submit</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

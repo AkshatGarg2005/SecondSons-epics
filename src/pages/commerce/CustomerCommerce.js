@@ -337,7 +337,12 @@ const CustomerCommerce = ({ mode = 'all' }) => {
               return (
                 <li key={p.id} style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
                   <div>
-                    <strong>{p.name}</strong>
+                    <strong
+                      style={{ cursor: 'pointer', color: '#2196F3', textDecoration: 'underline' }}
+                      onClick={() => window.location.href = `/product/${p.id}`}
+                    >
+                      {p.name}
+                    </strong>
                     {p.dose && ` ${p.dose}`}
                     {p.brand && ` (${p.brand})`}
                     {p.category && ` (${p.category})`}
