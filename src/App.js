@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -42,11 +42,23 @@ import CustomerSupport from './pages/support/CustomerSupport';
 import SupportDashboard from './pages/support/SupportDashboard';
 import ProviderSupportPage from './pages/support/ProviderSupportPage';
 
+import './App.css';
+
 const RequireAuth = ({ children, allowedRoles }) => {
   const { user, profile, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{
+          width: '40px', height: '40px', border: '3px solid #FFD9B3',
+          borderTopColor: '#FF6B00', borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite', margin: '0 auto 16px'
+        }} />
+        <p style={{ color: '#757575' }}>Loading...</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
   }
 
   if (!user) {
@@ -55,9 +67,17 @@ const RequireAuth = ({ children, allowedRoles }) => {
 
   if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
     return (
-      <div>
-        Access denied. This page is only for roles:{' '}
-        {allowedRoles.join(', ')}.
+      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🚫</div>
+        <h2>Access Denied</h2>
+        <p>This page is only for: {allowedRoles.join(', ')}</p>
+        <Link to="/" style={{
+          display: 'inline-block', marginTop: '16px', padding: '10px 24px',
+          background: 'linear-gradient(135deg, #FF6B00, #FF9F43)',
+          color: '#fff', borderRadius: '10px', textDecoration: 'none', fontWeight: 600
+        }}>
+          Go Home
+        </Link>
       </div>
     );
   }
@@ -72,41 +92,97 @@ const HomeRoute = () => {
 
 const AppInner = () => {
   const { user, profile, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const toggleMenu = () => setMenuOpen(!menuOpen);
+  const closeMenu = () => setMenuOpen(false);
+
+  const handleLogout = () => {
+    closeMenu();
+    logout();
+  };
 
   return (
     <div>
-      <header style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>
-        <nav style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <Link to="/">Home</Link>
-          {!user && <Link to="/login">Login</Link>}
-          {!user && <Link to="/register">Register</Link>}
-          {user && (
-            <>
-              <Link to="/profile">My Profile</Link>
-              <Link to="/commerce/cart">Cart</Link>
-              <Link to="/orders">My Orders</Link>
-              <Link to="/assistant">AI Assistant</Link>
-              {profile?.role === 'CUSTOMER' && (
-                <Link to="/support/customer">Support</Link>
-              )}
-              {profile?.role === 'SUPPORT' && (
-                <Link to="/support/dashboard">Support Dashboard</Link>
-              )}
-              {['SHOP', 'DRIVER', 'WORKER', 'HOST', 'DOCTOR', 'DELIVERY', 'RESTAURANT', 'PHARMACY'].includes(profile?.role) && (
-                <Link to="/support/provider">Support</Link>
-              )}
-              <span>
-                {profile
-                  ? `Logged in as: ${profile.name} (${profile.role})`
-                  : 'Loading profile...'}
-              </span>
-              <button onClick={logout}>Logout</button>
-            </>
-          )}
+      <header className="app-header">
+        <nav className="app-nav">
+          <Link to="/" className="brand" onClick={closeMenu}>
+            🔥 SecondSons
+          </Link>
+
+          {/* Hamburger button – mobile only */}
+          <button
+            className={`hamburger-btn ${menuOpen ? 'active' : ''}`}
+            onClick={toggleMenu}
+            aria-label="Toggle menu"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+
+          {/* Nav links */}
+          <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
+            {!user && (
+              <Link to="/login" onClick={closeMenu}>Login</Link>
+            )}
+            {!user && (
+              <Link to="/register" onClick={closeMenu}>Register</Link>
+            )}
+            {user && (
+              <>
+                <Link to="/profile" onClick={closeMenu}>My Profile</Link>
+                <Link to="/commerce/cart" onClick={closeMenu}>🛒 Cart</Link>
+                <Link to="/orders" onClick={closeMenu}>My Orders</Link>
+                <Link to="/assistant" onClick={closeMenu}>🤖 AI Assistant</Link>
+                {profile?.role === 'CUSTOMER' && (
+                  <Link to="/support/customer" onClick={closeMenu}>Support</Link>
+                )}
+                {profile?.role === 'SUPPORT' && (
+                  <Link to="/support/dashboard" onClick={closeMenu}>Support Dashboard</Link>
+                )}
+                {['SHOP', 'DRIVER', 'WORKER', 'HOST', 'DOCTOR', 'DELIVERY', 'RESTAURANT', 'PHARMACY'].includes(profile?.role) && (
+                  <Link to="/support/provider" onClick={closeMenu}>Support</Link>
+                )}
+                <span className="nav-user-info">
+                  {profile
+                    ? `${profile.name} (${profile.role})`
+                    : 'Loading profile...'}
+                </span>
+                <button onClick={handleLogout}>Logout</button>
+              </>
+            )}
+          </div>
         </nav>
       </header>
 
-      <main style={{ padding: '16px' }}>
+      {/* Bottom navigation – mobile only (visible when logged in) */}
+      {user && (
+        <div className="bottom-nav">
+          <Link to="/" onClick={closeMenu}>
+            <span className="nav-icon">🏠</span>
+            Home
+          </Link>
+          <Link to="/orders" onClick={closeMenu}>
+            <span className="nav-icon">📦</span>
+            Orders
+          </Link>
+          <Link to="/commerce/cart" onClick={closeMenu}>
+            <span className="nav-icon">🛒</span>
+            Cart
+          </Link>
+          <Link to="/assistant" onClick={closeMenu}>
+            <span className="nav-icon">🤖</span>
+            AI
+          </Link>
+          <Link to="/profile" onClick={closeMenu}>
+            <span className="nav-icon">👤</span>
+            Profile
+          </Link>
+        </div>
+      )}
+
+      <main className="app-main">
         <Routes>
           {/* Landing or dashboard depending on auth */}
           <Route path="/" element={<HomeRoute />} />
@@ -251,14 +327,6 @@ const AppInner = () => {
             }
           />
           <Route
-            path="/commerce/medicine"
-            element={
-              <RequireAuth allowedRoles={['CUSTOMER']}>
-                <CustomerCommerce mode="medicine" />
-              </RequireAuth>
-            }
-          />
-          <Route
             path="/product/:productId"
             element={
               <RequireAuth allowedRoles={['CUSTOMER']}>
@@ -343,7 +411,20 @@ const AppInner = () => {
           />
 
           {/* Fallback */}
-          <Route path="*" element={<div>Page not found.</div>} />
+          <Route path="*" element={
+            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <div style={{ fontSize: '4rem', marginBottom: '16px' }}>🔍</div>
+              <h1>Page Not Found</h1>
+              <p>The page you're looking for doesn't exist.</p>
+              <Link to="/" style={{
+                display: 'inline-block', marginTop: '16px', padding: '10px 24px',
+                background: 'linear-gradient(135deg, #FF6B00, #FF9F43)',
+                color: '#fff', borderRadius: '10px', textDecoration: 'none', fontWeight: 600
+              }}>
+                Go Home
+              </Link>
+            </div>
+          } />
         </Routes>
       </main>
     </div>
