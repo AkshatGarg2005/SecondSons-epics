@@ -181,7 +181,14 @@ const PropertyDetails = () => {
                                 <input
                                     type="date"
                                     value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    onChange={(e) => {
+                                        const newStart = e.target.value;
+                                        setStartDate(newStart);
+                                        if (endDate && newStart > endDate) {
+                                            setEndDate('');
+                                        }
+                                    }}
                                     required
                                     style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                                 />
@@ -193,6 +200,7 @@ const PropertyDetails = () => {
                                     <input
                                         type="date"
                                         value={endDate}
+                                        min={startDate || new Date().toISOString().split('T')[0]}
                                         onChange={(e) => setEndDate(e.target.value)}
                                         style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                                     />
