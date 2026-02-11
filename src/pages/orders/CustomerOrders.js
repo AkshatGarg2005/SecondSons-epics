@@ -56,6 +56,27 @@ const CustomerOrders = () => {
     alert('Symptoms updated!');
   };
 
+  // Helper: format Firestore timestamp to readable date+time
+  const formatTime = (ts) => {
+    if (!ts) return '';
+    const date = ts.toDate ? ts.toDate() : new Date(ts);
+    return date.toLocaleString('en-IN', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true,
+    });
+  };
+
+  // Helper: sort docs by createdAt descending (newest first)
+  const sortByNewest = (docs) =>
+    [...docs].sort((a, b) => {
+      const getTime = (item) => {
+        if (!item.createdAt) return 0;
+        if (item.createdAt.toMillis) return item.createdAt.toMillis();
+        return new Date(item.createdAt).getTime() || 0;
+      };
+      return getTime(b) - getTime(a);
+    });
+
   useEffect(() => {
     if (!user) return;
 
@@ -65,7 +86,7 @@ const CustomerOrders = () => {
     );
     const unsubCommerce = onSnapshot(qCommerce, (snapshot) => {
       setCommerceOrders(
-        snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
+        sortByNewest(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })))
       );
     });
 
@@ -74,7 +95,7 @@ const CustomerOrders = () => {
       where('customerId', '==', user.uid)
     );
     const unsubCab = onSnapshot(qCab, (snapshot) => {
-      setCabRequests(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setCabRequests(sortByNewest(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))));
     });
 
     const qService = query(
@@ -83,7 +104,7 @@ const CustomerOrders = () => {
     );
     const unsubService = onSnapshot(qService, (snapshot) => {
       setServiceRequests(
-        snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
+        sortByNewest(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })))
       );
     });
 
@@ -93,7 +114,7 @@ const CustomerOrders = () => {
     );
     const unsubHousing = onSnapshot(qHousing, (snapshot) => {
       setHousingBookings(
-        snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
+        sortByNewest(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })))
       );
     });
 
@@ -103,7 +124,7 @@ const CustomerOrders = () => {
     );
     const unsubMed = onSnapshot(qMed, (snapshot) => {
       setConsultations(
-        snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
+        sortByNewest(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })))
       );
     });
 
@@ -483,6 +504,9 @@ const CustomerOrders = () => {
                 {product ? product.name : o.productId} | Qty:{' '}
                 {o.quantity} | Status: {o.status}
               </div>
+              {o.createdAt && (
+                <div style={{ fontSize: '0.8em', color: '#888' }}>Ordered on: {formatTime(o.createdAt)}</div>
+              )}
               <div>
                 Shop:{' '}
                 {shop ? shop.name : o.shopId}
@@ -635,6 +659,9 @@ const CustomerOrders = () => {
                   {c.pickupLocation} → {c.dropLocation} | Status:{' '}
                   {c.status}
                 </div>
+                {c.createdAt && (
+                  <div style={{ fontSize: '0.8em', color: '#888' }}>Booked on: {formatTime(c.createdAt)}</div>
+                )}
                 {c.status === 'quoted' && typeof c.proposedPrice === 'number' && (
                   <div>
                     Driver quote: ₹{c.proposedPrice}
@@ -708,6 +735,9 @@ const CustomerOrders = () => {
                 <div>
                   [{s.category}] {s.description} | Status: {s.status}
                 </div>
+                {s.createdAt && (
+                  <div style={{ fontSize: '0.8em', color: '#888' }}>Requested on: {formatTime(s.createdAt)}</div>
+                )}
                 <div>Address: {s.address}</div>
                 {typeof s.proposedPrice === 'number' && (
                   <div>Worker quote: ₹{s.proposedPrice}</div>
@@ -793,6 +823,9 @@ const CustomerOrders = () => {
                     ` → ${b.endDate}`}{' '}
                   | Status: {b.status}
                 </div>
+                {b.createdAt && (
+                  <div style={{ fontSize: '0.8em', color: '#888' }}>Booked on: {formatTime(b.createdAt)}</div>
+                )}
                 {host && (
                   <div>
                     Host: {host.name}

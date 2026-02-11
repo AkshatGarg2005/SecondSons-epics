@@ -126,16 +126,26 @@ const PharmacyDashboard = () => {
     };
 
     const toggleAvailability = async (product) => {
-        await updateDoc(doc(db, 'products', product.id), {
-            isAvailable: !product.isAvailable,
-        });
+        try {
+            await updateDoc(doc(db, 'products', product.id), {
+                isAvailable: !product.isAvailable,
+            });
+            alert(`Availability toggled to ${!product.isAvailable ? 'Available' : 'Unavailable'}`);
+        } catch (err) {
+            console.error('Failed to toggle availability:', err);
+            alert('Failed to toggle availability: ' + err.message);
+        }
     };
 
     const updateOrderStatus = async (order, status, reason = null) => {
-        const updateData = { status };
-        if (reason) updateData.rejectionReason = reason;
-
-        await updateDoc(doc(db, 'commerceOrders', order.id), updateData);
+        try {
+            const updateData = { status };
+            if (reason) updateData.rejectionReason = reason;
+            await updateDoc(doc(db, 'commerceOrders', order.id), updateData);
+        } catch (err) {
+            console.error('Failed to update order status:', err);
+            alert('Failed to update order status: ' + err.message);
+        }
     };
 
     const handleRejectionReasonChange = (orderId, value) => {
@@ -153,10 +163,16 @@ const PharmacyDashboard = () => {
             alert('Please select a doctor to forward to.');
             return;
         }
-        await updateDoc(doc(db, 'commerceOrders', order.id), {
-            status: 'pending_doctor_approval',
-            forwardedToDoctorId: doctorId,
-        });
+        try {
+            await updateDoc(doc(db, 'commerceOrders', order.id), {
+                status: 'pending_doctor_approval',
+                forwardedToDoctorId: doctorId,
+            });
+            alert('Order forwarded to doctor successfully!');
+        } catch (err) {
+            console.error('Failed to forward to doctor:', err);
+            alert('Failed to forward to doctor: ' + err.message);
+        }
     };
 
     const [editingProduct, setEditingProduct] = useState(null);
