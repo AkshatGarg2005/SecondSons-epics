@@ -4,14 +4,12 @@ import {
   query,
   where,
   onSnapshot,
-  addDoc,
-  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../AuthContext';
 
 const CustomerHousing = () => {
-  const { user } = useAuth();
+  useAuth();
   const [properties, setProperties] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 

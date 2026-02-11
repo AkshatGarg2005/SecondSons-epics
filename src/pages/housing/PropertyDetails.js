@@ -13,11 +13,11 @@ import { useAuth } from '../../AuthContext';
 const PropertyDetails = () => {
     const { propertyId } = useParams();
     const navigate = useNavigate();
-    const { user, profile } = useAuth();
+    const { user } = useAuth();
     const [property, setProperty] = useState(null);
     const [host, setHost] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [, setError] = useState('');
     const [selectedImage, setSelectedImage] = useState('');
 
     // Booking State
