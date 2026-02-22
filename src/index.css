@@ -882,8 +882,16 @@ div[style*="position: fixed"][style*="background-color: rgba(0,0,0,0.5)"]>div {
     grid-template-columns: repeat(4, 1fr);
   }
 
-  form {
+  .app-main form {
     max-width: 520px !important;
+  }
+
+  .app-main form.chat-input-form {
+    max-width: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: none !important;
   }
 }
 

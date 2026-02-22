@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
-const ChatWindow = ({ requestId, currentUser, onClose, title = 'Chat' }) => {
+const ChatWindow = ({ requestId, currentUser, onClose, title = 'Support Chat' }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef(null);
@@ -37,6 +37,14 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Chat' }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // Prevent body scroll while chat is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
+
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!newMessage.trim()) return;
@@ -50,59 +58,102 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Chat' }) => {
         setNewMessage('');
     };
 
+    const formatTime = (timestamp) => {
+        if (!timestamp?.toDate) return '';
+        const date = timestamp.toDate();
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
     return (
         <div
             style={{
                 position: 'fixed',
-                bottom: '20px',
-                right: '20px',
-                width: '300px',
-                height: '400px',
-                backgroundColor: 'white',
-                border: '1px solid #ccc',
-                borderRadius: '8px',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: '#f0f2f5',
                 display: 'flex',
                 flexDirection: 'column',
-                zIndex: 1000,
+                zIndex: 2000,
             }}
         >
+            {/* Header */}
             <div
                 style={{
-                    padding: '10px',
-                    borderBottom: '1px solid #ccc',
+                    padding: '12px 16px',
+                    background: 'linear-gradient(135deg, #f47c20, #e06800)',
+                    color: 'white',
                     display: 'flex',
-                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    backgroundColor: '#f5f5f5',
-                    borderTopLeftRadius: '8px',
-                    borderTopRightRadius: '8px',
+                    gap: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    flexShrink: 0,
                 }}
             >
-                <strong>{title}</strong>
                 <button
                     onClick={onClose}
                     style={{
                         background: 'none',
                         border: 'none',
+                        color: 'white',
+                        fontSize: '22px',
                         cursor: 'pointer',
+                        padding: '4px 8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                    }}
+                    aria-label="Go back"
+                >
+                    ←
+                </button>
+                <div
+                    style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(255,255,255,0.25)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         fontSize: '16px',
+                        fontWeight: 'bold',
+                        flexShrink: 0,
                     }}
                 >
-                    ×
-                </button>
+                    🎧
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{title}</div>
+                    <div style={{ fontSize: '12px', opacity: 0.85 }}>Online</div>
+                </div>
             </div>
 
+            {/* Messages Area */}
             <div
                 style={{
                     flex: 1,
                     overflowY: 'auto',
-                    padding: '10px',
+                    padding: '16px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
+                    gap: '6px',
+                    WebkitOverflowScrolling: 'touch',
                 }}
             >
+                {messages.length === 0 && (
+                    <div
+                        style={{
+                            textAlign: 'center',
+                            color: '#999',
+                            marginTop: '40px',
+                            fontSize: '14px',
+                        }}
+                    >
+                        <div style={{ fontSize: '40px', marginBottom: '12px' }}>💬</div>
+                        No messages yet. Start the conversation!
+                    </div>
+                )}
                 {messages.map((msg) => {
                     const isMe = msg.senderId === currentUser.uid;
                     return (
@@ -110,28 +161,57 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Chat' }) => {
                             key={msg.id}
                             style={{
                                 alignSelf: isMe ? 'flex-end' : 'flex-start',
-                                backgroundColor: isMe ? '#007bff' : '#e9ecef',
-                                color: isMe ? 'white' : 'black',
-                                padding: '8px 12px',
-                                borderRadius: '12px',
-                                maxWidth: '80%',
-                                wordWrap: 'break-word',
+                                maxWidth: '78%',
                             }}
                         >
-                            {msg.text}
+                            <div
+                                style={{
+                                    backgroundColor: isMe ? '#f47c20' : '#ffffff',
+                                    color: isMe ? 'white' : '#1a1a1a',
+                                    padding: '10px 14px',
+                                    borderRadius: isMe
+                                        ? '18px 18px 4px 18px'
+                                        : '18px 18px 18px 4px',
+                                    wordWrap: 'break-word',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                                    fontSize: '15px',
+                                    lineHeight: '1.4',
+                                }}
+                            >
+                                {msg.text}
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: '11px',
+                                    color: '#999',
+                                    marginTop: '3px',
+                                    textAlign: isMe ? 'right' : 'left',
+                                    paddingLeft: isMe ? 0 : '6px',
+                                    paddingRight: isMe ? '6px' : 0,
+                                }}
+                            >
+                                {formatTime(msg.createdAt)}
+                            </div>
                         </div>
                     );
                 })}
                 <div ref={messagesEndRef} />
             </div>
 
+            {/* Message Input */}
             <form
+                className="chat-input-form"
                 onSubmit={handleSendMessage}
                 style={{
-                    padding: '10px',
-                    borderTop: '1px solid #ccc',
+                    padding: '10px 12px',
+                    borderTop: '1px solid #e0e0e0',
                     display: 'flex',
-                    gap: '8px',
+                    gap: '10px',
+                    alignItems: 'center',
+                    backgroundColor: '#ffffff',
+                    flexShrink: 0,
+                    width: '100%',
+                    boxSizing: 'border-box',
                 }}
             >
                 <input
@@ -139,10 +219,40 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Chat' }) => {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type a message..."
-                    style={{ flex: 1, padding: '6px' }}
+                    style={{
+                        flex: '1 1 auto',
+                        minWidth: 0,
+                        padding: '12px 16px',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '24px',
+                        fontSize: '15px',
+                        outline: 'none',
+                        backgroundColor: '#f5f5f5',
+                        boxSizing: 'border-box',
+                    }}
                 />
-                <button type="submit" style={{ padding: '6px 12px' }}>
-                    Send
+                <button
+                    type="submit"
+                    disabled={!newMessage.trim()}
+                    style={{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '50%',
+                        border: 'none',
+                        background: newMessage.trim()
+                            ? 'linear-gradient(135deg, #f47c20, #e06800)'
+                            : '#ccc',
+                        color: 'white',
+                        fontSize: '20px',
+                        cursor: newMessage.trim() ? 'pointer' : 'not-allowed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        transition: 'background 0.2s',
+                    }}
+                >
+                    ➤
                 </button>
             </form>
         </div>
