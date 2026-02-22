@@ -125,10 +125,9 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Support Chat' })
                 left: 0,
                 right: 0,
                 bottom: 0,
-                backgroundColor: '#ffffff',
+                backgroundColor: '#f0f2f5',
                 zIndex: 2000,
                 overscrollBehavior: 'none',
-                touchAction: 'none',
             }}
         >
             {/* Inner content - sizes to visual viewport so input stays above keyboard */}
@@ -142,9 +141,8 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Support Chat' })
                     height: `${viewportHeight}px`,
                     display: 'flex',
                     flexDirection: 'column',
-                    overflowY: 'hidden',
-                    backgroundColor: '#f0f2f5',
-                    overscrollBehavior: 'none',
+                    overflow: 'hidden',
+                    overscrollBehavior: 'contain',
                 }}
             >
                 {/* Header */}
