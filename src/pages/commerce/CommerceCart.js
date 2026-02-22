@@ -264,20 +264,61 @@ const CommerceCart = () => {
                   {shop?.address && ` | Address: ${shop.address}`}
                   {shop?.phone && ` | Phone: ${shop.phone}`}
                 </div>
-                <div>
-                  Quantity:{' '}
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity || 1}
-                    onChange={(e) =>
-                      updateQuantity(item, e.target.value)
-                    }
-                    style={{ width: '60px' }}
-                  />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                  Quantity:
+                  <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid #ccc', borderRadius: '6px', overflow: 'hidden' }}>
+                    <button
+                      onClick={() => updateQuantity(item, (item.quantity || 1) - 1)}
+                      disabled={(item.quantity || 1) <= 1}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        border: 'none',
+                        background: (item.quantity || 1) <= 1 ? '#eee' : '#f47c20',
+                        color: (item.quantity || 1) <= 1 ? '#aaa' : '#fff',
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        cursor: (item.quantity || 1) <= 1 ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      −
+                    </button>
+                    <span
+                      style={{
+                        width: '40px',
+                        textAlign: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        userSelect: 'none',
+                      }}
+                    >
+                      {item.quantity || 1}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item, (item.quantity || 1) + 1)}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        border: 'none',
+                        background: '#f47c20',
+                        color: '#fff',
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
                   <button
                     onClick={() => removeItem(item)}
-                    style={{ marginLeft: '8px' }}
+                    style={{ marginLeft: '4px' }}
                   >
                     Remove
                   </button>

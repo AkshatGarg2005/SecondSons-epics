@@ -128,7 +128,7 @@ const CustomerSupport = () => {
     };
 
     return (
-        <div style={{ padding: '20px' }}>
+        <div style={{ padding: '20px', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
             <h1>Customer Support</h1>
 
             {/* Create Case Flow */}
@@ -137,7 +137,7 @@ const CustomerSupport = () => {
                 {step === 1 && (
                     <div>
                         <p>Select a category:</p>
-                        <div style={{ display: 'flex', gap: '10px' }}>
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                             {CATEGORIES.map((cat) => (
                                 <button key={cat} onClick={() => handleCategorySelect(cat)}>
                                     {cat}
@@ -174,7 +174,7 @@ const CustomerSupport = () => {
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            style={{ width: '100%', height: '100px' }}
+                            style={{ width: '100%', height: '100px', boxSizing: 'border-box' }}
                             placeholder="Please describe the issue..."
                         />
                         <br /><br />
@@ -185,9 +185,9 @@ const CustomerSupport = () => {
 
             {/* My Cases List */}
             <h2>My Support Cases</h2>
-            <ul>
+            <ul style={{ paddingLeft: '0', listStyle: 'none' }}>
                 {myCases.map((c) => (
-                    <li key={c.id} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ccc' }}>
+                    <li key={c.id} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ccc', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                         <div>
                             <strong>{c.supportId}</strong> | {c.category} | Status: {c.status}
                         </div>
@@ -236,7 +236,8 @@ const CustomerSupport = () => {
             {feedbackCaseId && (
                 <div style={{
                     position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                    backgroundColor: 'white', padding: '20px', border: '1px solid black', zIndex: 1000
+                    backgroundColor: 'white', padding: '20px', border: '1px solid black', zIndex: 1000,
+                    width: '90%', maxWidth: '400px', boxSizing: 'border-box', borderRadius: '8px'
                 }}>
                     <h3>Rate Support</h3>
                     <label>
