@@ -33,6 +33,105 @@ const CustomerHousing = () => {
 
   return (
     <div>
+      <style>{`
+        .property-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        .property-card {
+          border: 1px solid #e0e0e0;
+          border-radius: 12px;
+          overflow: hidden;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          background: #fff;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+          transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .property-card:hover {
+          box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+          transform: translateY(-2px);
+        }
+        .property-card-image {
+          width: 100%;
+          height: 220px;
+          object-fit: cover;
+        }
+        .property-card-placeholder {
+          width: 100%;
+          height: 220px;
+          background: #f0f0f0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #999;
+          font-size: 0.95rem;
+        }
+        .property-card-body {
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+        }
+        .property-card-body h3 {
+          margin: 0 0 4px 0;
+          font-size: 1.15rem;
+        }
+        .property-card-type {
+          color: #888;
+          font-size: 0.85em;
+          margin: 0 0 6px 0;
+        }
+        .property-card-address {
+          margin: 0 0 10px 0;
+          color: #555;
+          font-size: 0.9em;
+        }
+        .property-card-prices {
+          margin-top: auto;
+        }
+        .property-card-price {
+          font-weight: 700;
+          font-size: 1rem;
+          color: #333;
+        }
+        .property-card-link {
+          display: inline-block;
+          text-align: center;
+          background: linear-gradient(135deg, #f47c20, #e06800);
+          color: white;
+          padding: 10px 20px;
+          border-radius: 8px;
+          text-decoration: none;
+          margin-top: 12px;
+          font-weight: 600;
+          font-size: 0.9rem;
+          transition: opacity 0.2s;
+        }
+        .property-card-link:hover {
+          opacity: 0.9;
+          text-decoration: none;
+          color: white;
+        }
+        @media (min-width: 768px) {
+          .property-card {
+            flex-direction: row;
+          }
+          .property-card-image,
+          .property-card-placeholder {
+            width: 40%;
+            min-width: 280px;
+            height: auto;
+            min-height: 220px;
+          }
+          .property-card-body {
+            width: 60%;
+          }
+        }
+      `}</style>
+
       <h1>Housing (Customer)</h1>
       <p>Your house bookings are available in the "My Orders" page.</p>
 
@@ -54,65 +153,46 @@ const CustomerHousing = () => {
       </div>
 
       <h2>Available properties</h2>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+      <div className="property-grid">
         {filteredProperties.map((p) => (
-          <div
-            key={p.id}
-            style={{
-              border: '1px solid #ccc',
-              borderRadius: '8px',
-              padding: '10px',
-              width: '300px',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
-          >
-            {/* Main Image */}
+          <div key={p.id} className="property-card">
+            {/* Image */}
             {p.images && p.images.length > 0 ? (
               <img
                 src={p.images[0]}
                 alt={p.title}
-                style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '4px', marginBottom: '10px' }}
+                className="property-card-image"
               />
             ) : p.imageUrl ? (
               <img
                 src={p.imageUrl}
                 alt={p.title}
-                style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '4px', marginBottom: '10px' }}
+                className="property-card-image"
               />
             ) : (
-              <div style={{ width: '100%', height: '200px', backgroundColor: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', marginBottom: '10px' }}>
+              <div className="property-card-placeholder">
                 No Image
               </div>
             )}
 
-            <h3>{p.title}</h3>
-            <p style={{ color: '#666', fontSize: '0.9em' }}>{p.propertyType}</p>
-            <p style={{ margin: '5px 0' }}>{p.address}</p>
+            {/* Text Content */}
+            <div className="property-card-body">
+              <h3>{p.title}</h3>
+              <p className="property-card-type">{p.propertyType}</p>
+              <p className="property-card-address">{p.address}</p>
 
-            <div style={{ marginTop: 'auto' }}>
-              {p.pricePerDay && (
-                <div style={{ fontWeight: 'bold' }}>₹{p.pricePerDay}/day</div>
-              )}
-              {p.pricePerMonth && (
-                <div style={{ fontWeight: 'bold' }}>₹{p.pricePerMonth}/month</div>
-              )}
+              <div className="property-card-prices">
+                {p.pricePerDay && (
+                  <div className="property-card-price">₹{p.pricePerDay}/day</div>
+                )}
+                {p.pricePerMonth && (
+                  <div className="property-card-price">₹{p.pricePerMonth}/month</div>
+                )}
 
-              <a
-                href={`/property/${p.id}`}
-                style={{
-                  display: 'block',
-                  textAlign: 'center',
-                  backgroundColor: '#2196F3',
-                  color: 'white',
-                  padding: '10px',
-                  borderRadius: '5px',
-                  textDecoration: 'none',
-                  marginTop: '10px'
-                }}
-              >
-                View Details
-              </a>
+                <a href={`/property/${p.id}`} className="property-card-link">
+                  View Details
+                </a>
+              </div>
             </div>
           </div>
         ))}
