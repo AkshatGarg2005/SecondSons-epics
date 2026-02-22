@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
     collection,
     query,
@@ -12,7 +12,10 @@ import { db } from '../firebase';
 const ChatWindow = ({ requestId, currentUser, onClose, title = 'Support Chat' }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
+    const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
     const messagesEndRef = useRef(null);
+    const containerRef = useRef(null);
+    const inputRef = useRef(null);
 
     useEffect(() => {
         if (!requestId) return;
@@ -35,15 +38,54 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Support Chat' })
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }, [messages, viewportHeight]);
 
-    // Prevent body scroll while chat is open
-    useEffect(() => {
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = '';
-        };
+    // Handle mobile keyboard: use visualViewport to track actual visible area
+    const handleViewportResize = useCallback(() => {
+        if (window.visualViewport) {
+            setViewportHeight(window.visualViewport.height);
+        } else {
+            setViewportHeight(window.innerHeight);
+        }
     }, []);
+
+    useEffect(() => {
+        // Lock body scroll
+        const originalOverflow = document.body.style.overflow;
+        const originalPosition = document.body.style.position;
+        const originalTop = document.body.style.top;
+        const originalWidth = document.body.style.width;
+        const scrollY = window.scrollY;
+
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.width = '100%';
+
+        // Listen to visualViewport resize (fires when keyboard opens/closes)
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', handleViewportResize);
+            window.visualViewport.addEventListener('scroll', handleViewportResize);
+        }
+        window.addEventListener('resize', handleViewportResize);
+
+        // Set initial height
+        handleViewportResize();
+
+        return () => {
+            document.body.style.overflow = originalOverflow;
+            document.body.style.position = originalPosition;
+            document.body.style.top = originalTop;
+            document.body.style.width = originalWidth;
+            window.scrollTo(0, scrollY);
+
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', handleViewportResize);
+                window.visualViewport.removeEventListener('scroll', handleViewportResize);
+            }
+            window.removeEventListener('resize', handleViewportResize);
+        };
+    }, [handleViewportResize]);
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
@@ -56,6 +98,15 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Support Chat' })
         });
 
         setNewMessage('');
+        // Keep the input focused after sending
+        inputRef.current?.focus();
+    };
+
+    const handleInputFocus = () => {
+        // Give the keyboard time to open, then scroll to bottom
+        setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 300);
     };
 
     const formatTime = (timestamp) => {
@@ -64,18 +115,23 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Support Chat' })
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
+    // Calculate the offset for visualViewport (keyboard pushes viewport up)
+    const vpOffsetTop = window.visualViewport ? window.visualViewport.offsetTop : 0;
+
     return (
         <div
+            ref={containerRef}
             style={{
                 position: 'fixed',
-                top: 0,
+                top: `${vpOffsetTop}px`,
                 left: 0,
-                right: 0,
-                bottom: 0,
+                width: '100%',
+                height: `${viewportHeight}px`,
                 backgroundColor: '#f0f2f5',
                 display: 'flex',
                 flexDirection: 'column',
                 zIndex: 2000,
+                overflowY: 'hidden',
             }}
         >
             {/* Header */}
@@ -139,6 +195,7 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Support Chat' })
                     flexDirection: 'column',
                     gap: '6px',
                     WebkitOverflowScrolling: 'touch',
+                    minHeight: 0,
                 }}
             >
                 {messages.length === 0 && (
@@ -204,6 +261,7 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Support Chat' })
                 onSubmit={handleSendMessage}
                 style={{
                     padding: '10px 12px',
+                    paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
                     borderTop: '1px solid #e0e0e0',
                     display: 'flex',
                     gap: '10px',
@@ -215,9 +273,11 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Support Chat' })
                 }}
             >
                 <input
+                    ref={inputRef}
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
+                    onFocus={handleInputFocus}
                     placeholder="Type a message..."
                     style={{
                         flex: '1 1 auto',
@@ -225,7 +285,7 @@ const ChatWindow = ({ requestId, currentUser, onClose, title = 'Support Chat' })
                         padding: '12px 16px',
                         border: '1px solid #e0e0e0',
                         borderRadius: '24px',
-                        fontSize: '15px',
+                        fontSize: '16px',
                         outline: 'none',
                         backgroundColor: '#f5f5f5',
                         boxSizing: 'border-box',
