@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../../AuthContext';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
+const API_URL = `${API_BASE_URL}/chat`;
+
 const AiAssistant = () => {
   const { user } = useAuth();
   const [messages, setMessages] = useState([
@@ -14,9 +17,6 @@ const AiAssistant = () => {
   const [sessionId, setSessionId] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
-  const API_URL = `${API_BASE_URL}/chat`;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
